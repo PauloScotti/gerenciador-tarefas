@@ -15,15 +15,52 @@
         "/login": {
             "post": {
                 "summary": "Faz autenticação do usuário e devolve o token de acesso",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "schema": {
-                            "$ref": "#/definitions/LoginSucesso"
+                            "$ref": "#/definitions/LoginResponse200"
                         }
                     },
                     "400": {
                         "schema": {
-                            "$ref": "#/definitions/LoginInvalido"
+                            "$ref": "#/definitions/ResponseErro"
+                        }
+                    }
+                }
+            }
+        },
+        "/usuario": {
+            "post": {
+                "summary": "Faz o cadastro do usuário no sistema",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UsuarioCadastroRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "schema": {
+                            "$ref": "#/definitions/UsuarioCadastroResponse200"
+                        }
+                    },
+                    "400": {
+                        "schema": {
+                            "$ref": "#/definitions/ResponseErro"
                         }
                     }
                 }
@@ -31,16 +68,75 @@
         }
     },
     "definitions": {
-        "LoginSucesso": {
+        "LoginRequest": {
             "type": "object",
             "properties": {
+                "email": {
+                    "login": "string",
+                    "exmaple": "email@email.com"
+                },
+                "senha": {
+                    "type": "string",
+                    "exmaple": "senha123456"
+                }
+            }
+        },
+        "LoginResponse200": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "number",
+                    "exmaple": 1
+                },
+                "nome": {
+                    "type": "string",
+                    "exmaple": "Fulano da Silve"
+                },
+                "email": {
+                    "type": "string",
+                    "exmaple": "email@email.com"
+                },
                 "token": {
                     "type": "string",
                     "exmaple": "f2f3fafefafefdd"
                 }
             }
         },
-        "LoginInvalido": {
+        "UsuarioCadastroRequest": {
+            "type": "object",
+            "properties": {
+                "nome": {
+                    "type": "string",
+                    "exmaple": "Fulano da Silve"
+                },
+                "email": {
+                    "type": "string",
+                    "exmaple": "email@email.com"
+                },
+                "senha": {
+                    "type": "string",
+                    "exmaple": "senha123456"
+                }
+            }
+        },
+        "UsuarioCadastroResponse200": {
+            "type": "object",
+            "properties": {
+                "nome": {
+                    "type": "string",
+                    "exmaple": "Fulano da Silve"
+                },
+                "email": {
+                    "type": "string",
+                    "exmaple": "email@email.com"
+                },
+                "senha": {
+                    "type": "string",
+                    "exmaple": "senha123456"
+                }
+            }
+        },
+        "ResponseErro": {
             "type": "object",
             "properties": {
                 "status": {

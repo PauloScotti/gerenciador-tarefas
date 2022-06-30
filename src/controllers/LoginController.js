@@ -1,4 +1,5 @@
 const HttpController = require('./HttpController');
+const LoginService = require('../services/LoginService');
 
 class LoginController extends HttpController {
     configurarRotas(baseURL) {
@@ -6,15 +7,20 @@ class LoginController extends HttpController {
     }
 
     login(req, res) {
-        if (!req.body || !req.body.login || !req.body.senha) {
+        const body = req.body;
+        if (!body || !body.login || !body.senha) {
+            req.logger.info('requisição de login inválida');
             return res.status(400).json({
                 status: 400,
                 erro: "Parâmetros de entrada inválidos"
             });
         }
-        res.json({
-            token: 'token gerado pela api'
-        });
+
+        const service = new LoginService();
+        const resultado = service.logar(body.login, body.senha);
+
+        req.logger.info('requisição de login realizada com sucesso', `resultado=${JSON.stringify(resultado)}`);
+        res.json(resultado);
     }
 
 }
