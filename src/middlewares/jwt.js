@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
+const UsuarioRepository = require('../repositories/impl/MongoDBUsuarioRepository');
 
+// define a lista de rotas publicas da aplicação
 const rotasPublicas = [
     {
         url: '/api/login',
@@ -16,7 +18,7 @@ const rotasPublicas = [
 ]
 
 module.exports = (req, res, next) => {
-    req.logger.info('Verificando permissão de acesso a rota', `rota=${req.url}`);
+    req.logger.info('verificando permissão de acesso a rota', `rota=${req.url}`);
 
     // verifica se a requisição recebida é de alguma rota publica
     const rotaPublica = rotasPublicas.find(rota => {
@@ -31,48 +33,62 @@ module.exports = (req, res, next) => {
                 && urlRrequisicaoContemParteDaRotaPublica
             )
         )
-        && (rota.metodo === req.method.toUpperCase())
+        && (
+            rota.metodo === req.method.toUpperCase()
+            || req.method.toUpperCase() === 'OPTIONS'
+        )
     });
-
+    
     if (rotaPublica) {
+        req.logger.info('rota publica, requisição liberada');
         return next();
     }
 
     const authorization = req.headers.authorization;
+    // verifica se o header de autorização foi informado
     if (!authorization) {
+        req.logger.info('acesso negado, sem header de autorização');
+        // http status 401 = acesso negado
         return res.status(401).json({
             status: 401,
-            erro: 'Acesso negado, você precisa enviar o header de autorização'
+            erro: 'acesso negado, você precisa enviar o header authorization'
         });
     }
 
+    // pega o token de autorização, extraindo a parte do 'Bearer '
+    // pega o texto do 8 caractere em diante
     const token = authorization.substr(7);
     if (!token) {
+        req.logger.info('requisição sem token de acesso');
         return res.status(401).json({
             status: 401,
-            erro: 'O token de acesso não foi informado'
+            erro: 'acesso negado, o token de acesso não foi informado'
         });
     }
 
-    // vverificar se o tokenm é válido
-    jwt.verify(token, process.env.CHAVE_SECRETA_JWT, (err, decode) => {
+    // verificar se o token é valido e foi gerado usando a nossa chave secreta
+    jwt.verify(token, process.env.CHAVE_SECRETA_JWT, async (err, decoded) => {
         if (err) {
-            req.logger.error('Erro ao verificar o token JWT', `token=${token}`);
+            req.logger.error('erro ao decodificar o token jwt', `token=${token}`);
             return res.status(401).json({
                 status: 401,
-                erro: 'Acesso negado, problema ao decodificar o seu token de autorização'
+                erro: 'acesso negado, problema ao decodificar o seu token de autorização'
             });
         }
 
         req.logger.debug('token jwt decodificado', `idUsuario=${decoded._id}`);
-        // TODO: carregar o usuário a partir do BD
-        const usuario = {
-            id: decoded._id
+
+        const usuario = await UsuarioRepository.buscarPorId(decoded._id);
+        if (!usuario) {
+            req.logger.error('usuário não encontrado na base', `id=${decoded._id}`);
+            return res.status(401).json({
+                status: 401,
+                erro: 'acesso negado, usuário não encontrado'
+            });
         }
 
-        // quem é o usuário autenticado
+        // atribui a propriedade usuario da requisição, quem é o usuário autenticado
         req.usuario = usuario;
         next();
-    })
-
+    });
 }

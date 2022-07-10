@@ -3,8 +3,11 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerFile = require('./swagger/swagger.json');
 const LoginController = require('./controllers/LoginController');
 const UsuarioController = require('./controllers/UsuarioController');
+const TarefaController = require('./controllers/TarefaController');
 const AppConstants = require('./enum/AppConstants');
+const MongoDBConectionHelper = require('./helpers/MongoDBConectionHelper');
 
+const cors = require('./middlewares/cors');
 const logger = require('./middlewares/logger');
 const jwt = require('./middlewares/jwt');
 
@@ -15,6 +18,9 @@ class App {
     iniciar() {
         //configurar express
         this.#configurarExpress();
+
+        //conexão com o DB
+        this.#configurarBancoDeDados();
 
         //carregar os controllers
         this.#carregarControllers();
@@ -34,6 +40,9 @@ class App {
         this.express.use(express.urlencoded({ extended: true }));
         this.express.use(express.json());
 
+        // registra o middleware para habilitar requisições de outros dominios
+        this.express.use(cors);
+
         // registra o middleware do jwt para fazer validações do acesso
         this.express.use(jwt);
 
@@ -44,11 +53,16 @@ class App {
             );
     }
 
+    #configurarBancoDeDados = () => {
+        MongoDBConectionHelper.conectar();
+    }
+
     #carregarControllers = () => {
         // atribui para a propriedade #controllers a lista de controllers disponíveis para a aplicação
         this.#controllers = [
             new LoginController(this.express),
-            new UsuarioController(this.express)
+            new UsuarioController(this.express),
+            new TarefaController(this.express)
         ];
     }
 
